@@ -1,12 +1,12 @@
 {
   "domain": "bateria_virtual",
   "name": "Bateria Virtual",
-  "version": "0.1.0",
-  "documentation": "https://github.com/juanfranciscolopez28/ha-bateria-virtual",
-  "issue_tracker": "https://github.com/juanfranciscolopez28/ha-bateria-virtual/issues",
   "codeowners": ["@juanfranciscolopez28"],
   "config_flow": true,
-  "iot_class": "calculated",
+  "documentation": "https://github.com/juanfranciscolopez28/ha-bateria-virtual",
   "integration_type": "service",
-  "requirements": []
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/juanfranciscolopez28/ha-bateria-virtual/issues",
+  "requirements": [],
+  "version": "0.1.0"
 }
