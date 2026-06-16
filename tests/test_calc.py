@@ -3,9 +3,12 @@ import datetime as dt
 
 from custom_components.bateria_virtual.calc import (
     apply_discount,
+    cycle_total_days,
+    days_until_billing_close,
     estimate_bill,
     is_billing_close_day,
     next_balance_after_expiry,
+    next_billing_close,
     price_with_taxes,
     surplus_value,
 )
@@ -125,3 +128,33 @@ def test_next_balance_after_expiry_disabled_when_zero():
     kept, expired = next_balance_after_expiry(buckets, now=dt.date(2026, 6, 16), expiry_months=0)
     assert expired == 0.0
     assert kept == buckets
+
+
+def test_next_billing_close_same_month_when_day_not_yet_passed():
+    assert next_billing_close(dt.date(2026, 6, 10), billing_day=15) == dt.date(2026, 6, 15)
+
+
+def test_next_billing_close_is_today_on_close_day():
+    assert next_billing_close(dt.date(2026, 6, 15), billing_day=15) == dt.date(2026, 6, 15)
+
+
+def test_next_billing_close_rolls_to_next_month_after_close_day():
+    assert next_billing_close(dt.date(2026, 6, 16), billing_day=1) == dt.date(2026, 7, 1)
+
+
+def test_next_billing_close_clamps_to_month_end():
+    # billing_day 31 in a 30-day month closes on the 30th
+    assert next_billing_close(dt.date(2026, 6, 20), billing_day=31) == dt.date(2026, 6, 30)
+
+
+def test_days_until_billing_close_counts_whole_days():
+    assert days_until_billing_close(dt.date(2026, 6, 16), billing_day=1) == 15
+
+
+def test_days_until_billing_close_zero_on_close_day():
+    assert days_until_billing_close(dt.date(2026, 6, 1), billing_day=1) == 0
+
+
+def test_cycle_total_days_full_month():
+    # A cycle that opened on 2026-06-01 with billing day 1 spans to 2026-07-01 = 30 days.
+    assert cycle_total_days(dt.date(2026, 6, 1), billing_day=1) == 30

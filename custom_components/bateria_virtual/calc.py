@@ -89,7 +89,7 @@ def price_with_taxes(
 def apply_discount(balance: float, bill: float) -> tuple[float, float]:
     """Apply virtual-battery balance to a bill.
 
-    Returns (new_balance, discount). Niba allows the bill to reach 0.
+    Returns (new_balance, discount). The bill is allowed to reach 0.
     """
     discount = min(balance, bill)
     return balance - discount, discount
@@ -100,6 +100,37 @@ def is_billing_close_day(today: dt.date, billing_day: int) -> bool:
     last_day = calendar.monthrange(today.year, today.month)[1]
     effective_day = min(billing_day, last_day)
     return today.day == effective_day
+
+
+def next_billing_close(d: dt.date, billing_day: int) -> dt.date:
+    """Smallest date on or after `d` that is a billing close day.
+
+    `billing_day` is clamped to the length of the target month (e.g. day 31 in
+    a 30-day month becomes the 30th).
+    """
+    last = calendar.monthrange(d.year, d.month)[1]
+    effective_day = min(billing_day, last)
+    if d.day <= effective_day:
+        return dt.date(d.year, d.month, effective_day)
+    year = d.year + (1 if d.month == 12 else 0)
+    month = 1 if d.month == 12 else d.month + 1
+    last_next = calendar.monthrange(year, month)[1]
+    return dt.date(year, month, min(billing_day, last_next))
+
+
+def days_until_billing_close(today: dt.date, billing_day: int) -> int:
+    """Whole days until the next billing close (0 if today is the close day)."""
+    return (next_billing_close(today, billing_day) - today).days
+
+
+def cycle_total_days(period_start: dt.date, billing_day: int) -> int:
+    """Total days of the billing cycle that opened on `period_start`.
+
+    The cycle runs from `period_start` to the next billing close strictly after
+    it, matching the day count used by the running bill estimate.
+    """
+    next_close = next_billing_close(period_start + dt.timedelta(days=1), billing_day)
+    return max(1, (next_close - period_start).days)
 
 
 def next_balance_after_expiry(

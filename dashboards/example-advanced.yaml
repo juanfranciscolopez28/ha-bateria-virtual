@@ -1,0 +1,290 @@
+type: sections
+max_columns: 4
+title: Batería Virtual
+path: bateria-virtual
+sections:
+  # -----------------------------------------------------------------
+  # Cabecera: título + chips de estado rápido (Mushroom)
+  # -----------------------------------------------------------------
+  - type: grid
+    cards:
+      - type: custom:mushroom-title-card
+        title: 🔋 Batería Virtual
+        subtitle: Excedentes acumulados y factura estimada
+      # Chips alineados con el subtítulo: saldo, excedente acumulado,
+      # factura estimada y cuenta atrás al corte.
+      - type: custom:mushroom-chips-card
+        alignment: center
+        chips:
+          - type: entity
+            entity: sensor.bateria_virtual_virtual_battery_balance
+            icon: mdi:battery-charging-high
+            icon_color: green
+          - type: entity
+            entity: sensor.bateria_virtual_surplus_value_month
+            icon: mdi:solar-power-variant
+            icon_color: orange
+          - type: entity
+            entity: sensor.bateria_virtual_estimated_final_bill
+            icon: mdi:file-document-edit-outline
+            icon_color: blue
+          - type: entity
+            entity: sensor.bateria_virtual_days_until_billing_close
+            icon: mdi:calendar-clock
+            icon_color: purple
+
+  # -----------------------------------------------------------------
+  # Saldo: button-card grande estilo "tarjeta de saldo"
+  # -----------------------------------------------------------------
+  - type: grid
+    cards:
+      - type: custom:button-card
+        entity: sensor.bateria_virtual_virtual_battery_balance
+        name: Saldo disponible
+        icon: mdi:battery-heart-variant
+        show_state: true
+        show_label: true
+        label: |
+          [[[
+            const proj = states['sensor.bateria_virtual_projected_balance_end_of_month'];
+            const v = proj ? Number(proj.state).toFixed(2) : '—';
+            return `Proyectado fin de mes: ${v} €`;
+          ]]]
+        state_display: |
+          [[[ return `${Number(entity.state).toFixed(2)} €`; ]]]
+        styles:
+          card:
+            - padding: 16px
+            - border-radius: 18px
+            - background: |
+                [[[
+                  const v = Number(entity.state);
+                  return v > 0
+                    ? 'linear-gradient(135deg,#0f9b6c,#1fd18a)'
+                    : 'linear-gradient(135deg,#555,#777)';
+                ]]]
+            - color: white
+          name:
+            - font-size: 14px
+            - opacity: 0.9
+            - justify-self: start
+          state:
+            - font-size: 34px
+            - font-weight: bold
+            - justify-self: start
+          label:
+            - font-size: 12px
+            - opacity: 0.85
+            - justify-self: start
+          grid:
+            - grid-template-areas: '"i n" "i s" "i l"'
+            - grid-template-columns: min-content 1fr
+
+  # -----------------------------------------------------------------
+  # Bubble Card: factura estimada vs descuento (botones-resumen)
+  # -----------------------------------------------------------------
+  - type: grid
+    cards:
+      - type: custom:bubble-card
+        card_type: button
+        button_type: state
+        entity: sensor.bateria_virtual_estimated_final_bill
+        name: Factura final estimada
+        icon: mdi:file-document-edit-outline
+        show_state: true
+        styles: |
+          .bubble-icon-container {
+            background: rgba(33,150,243,0.2) !important;
+          }
+      - type: custom:bubble-card
+        card_type: button
+        button_type: state
+        entity: sensor.bateria_virtual_estimated_discount
+        name: Descuento batería
+        icon: mdi:sale
+        show_state: true
+        styles: |
+          .bubble-icon-container {
+            background: rgba(76,175,80,0.2) !important;
+          }
+
+  # -----------------------------------------------------------------
+  # ApexCharts: histórico del saldo (área + curva)
+  # -----------------------------------------------------------------
+  - type: grid
+    cards:
+      - type: custom:apexcharts-card
+        header:
+          show: true
+          title: Evolución del saldo
+          show_states: true
+          colorize_states: true
+        graph_span: 90d
+        span:
+          end: day
+        apex_config:
+          chart:
+            height: 240
+          stroke:
+            curve: smooth
+            width: 2
+          fill:
+            type: gradient
+            gradient:
+              opacityFrom: 0.5
+              opacityTo: 0.0
+        series:
+          - entity: sensor.bateria_virtual_virtual_battery_balance
+            name: Saldo (€)
+            type: area
+            color: '#1fd18a'
+            group_by:
+              func: last
+              duration: 1d
+
+  # -----------------------------------------------------------------
+  # ApexCharts: importación de red por periodo (barras apiladas)
+  # Barras => `type: column` en cada serie (NO `chart_type: bar`).
+  # -----------------------------------------------------------------
+  - type: grid
+    cards:
+      - type: custom:apexcharts-card
+        stacked: true
+        header:
+          show: true
+          title: Importación del mes por periodo
+          show_states: true
+        apex_config:
+          chart:
+            height: 240
+          plotOptions:
+            bar:
+              horizontal: false
+              borderRadius: 4
+        series:
+          - entity: sensor.bateria_virtual_grid_import_month_p1
+            name: P1 punta
+            type: column
+            color: '#e74c3c'
+            group_by:
+              func: max
+              duration: 1d
+          - entity: sensor.bateria_virtual_grid_import_month_p2
+            name: P2 llano
+            type: column
+            color: '#f39c12'
+            group_by:
+              func: max
+              duration: 1d
+          - entity: sensor.bateria_virtual_grid_import_month_p3
+            name: P3 valle
+            type: column
+            color: '#27ae60'
+            group_by:
+              func: max
+              duration: 1d
+
+  # -----------------------------------------------------------------
+  # ApexCharts radial: % de la factura cubierto por la batería
+  # -----------------------------------------------------------------
+  - type: grid
+    cards:
+      - type: custom:apexcharts-card
+        header:
+          show: true
+          title: Cobertura de la factura
+        chart_type: radialBar
+        apex_config:
+          chart:
+            height: 240
+          plotOptions:
+            radialBar:
+              hollow:
+                size: 55%
+              dataLabels:
+                name:
+                  show: true
+                value:
+                  formatter: |
+                    EVAL:function(val){ return val.toFixed(0) + '%'; }
+        series:
+          - entity: sensor.bateria_virtual_estimated_discount
+            name: Cubierto
+            color: '#1fd18a'
+            transform: >
+              const bill = Number(
+                hass.states['sensor.bateria_virtual_estimated_bill'].state
+              );
+              return bill > 0 ? Math.min(100, (Number(x) / bill) * 100) : 0;
+
+  # -----------------------------------------------------------------
+  # Detalle numérico (Mushroom entity cards)
+  # -----------------------------------------------------------------
+  - type: grid
+    cards:
+      - type: custom:mushroom-entity-card
+        entity: sensor.bateria_virtual_surplus_value_month
+        name: Excedente del mes
+        icon: mdi:solar-power-variant
+        icon_color: orange
+      - type: custom:mushroom-entity-card
+        entity: sensor.bateria_virtual_estimated_bill
+        name: Factura estimada (bruta)
+        icon: mdi:receipt-text-outline
+        icon_color: blue
+      - type: custom:mushroom-entity-card
+        entity: sensor.bateria_virtual_projected_balance_end_of_month
+        name: Saldo proyectado fin de mes
+        icon: mdi:calendar-end
+        icon_color: green
+      - type: custom:mushroom-entity-card
+        entity: sensor.bateria_virtual_lifetime_savings
+        name: Ahorro acumulado
+        icon: mdi:piggy-bank-outline
+        icon_color: teal
+      - type: custom:mushroom-entity-card
+        entity: sensor.bateria_virtual_balance_coverage_months
+        name: Cobertura del saldo
+        icon: mdi:calendar-month
+        icon_color: indigo
+      - type: custom:mushroom-entity-card
+        entity: sensor.bateria_virtual_days_until_billing_close
+        name: Días hasta el corte
+        icon: mdi:calendar-clock
+        icon_color: purple
+
+  # -----------------------------------------------------------------
+  # ApexCharts: factura final vs ahorro acumulado (histórico)
+  # -----------------------------------------------------------------
+  - type: grid
+    cards:
+      - type: custom:apexcharts-card
+        header:
+          show: true
+          title: Factura final y ahorro acumulado
+          show_states: true
+          colorize_states: true
+        graph_span: 365d
+        span:
+          end: day
+        apex_config:
+          chart:
+            height: 240
+          stroke:
+            curve: smooth
+            width: 2
+        series:
+          - entity: sensor.bateria_virtual_estimated_final_bill
+            name: Factura final (€)
+            type: column
+            color: '#2196f3'
+            group_by:
+              func: max
+              duration: 1d
+          - entity: sensor.bateria_virtual_lifetime_savings
+            name: Ahorro acumulado (€)
+            type: line
+            color: '#1fd18a'
+            group_by:
+              func: last
+              duration: 1d

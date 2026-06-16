@@ -11,7 +11,7 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfEnergy
+from homeassistant.const import UnitOfEnergy, UnitOfTime
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import async_generate_entity_id
@@ -111,6 +111,8 @@ SENSORS: tuple[BVSensorDescription, ...] = (
         name="Estimated final bill",
         unit=_EUR,
         device_class=SensorDeviceClass.MONETARY,
+        # TOTAL so HA keeps it in long-term statistics; resets monthly like the bill.
+        state_class=SensorStateClass.TOTAL,
         value_fn=lambda c: round(
             max(0.0, c.current_bill().total - c.state.balance), 2
         ),
@@ -123,6 +125,30 @@ SENSORS: tuple[BVSensorDescription, ...] = (
         value_fn=lambda c: round(
             max(0.0, c.state.balance - c.current_bill().total), 2
         ),
+    ),
+    BVSensorDescription(
+        key="lifetime_savings",
+        name="Total savings",
+        unit=_EUR,
+        device_class=SensorDeviceClass.MONETARY,
+        state_class=SensorStateClass.TOTAL,
+        value_fn=lambda c: round(c.state.lifetime_savings, 2),
+    ),
+    BVSensorDescription(
+        key="balance_coverage_months",
+        name="Balance coverage",
+        unit="months",
+        device_class=None,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda c: round(c.balance_coverage_months(), 2),
+    ),
+    BVSensorDescription(
+        key="days_until_billing_close",
+        name="Days until billing close",
+        unit=UnitOfTime.DAYS,
+        device_class=None,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda c: c.days_until_billing_close(),
     ),
 )
 
@@ -167,7 +193,7 @@ class BVSensor(SensorEntity):
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
             name="Bateria Virtual",
-            manufacturer="Niba",
+            manufacturer="Bateria Virtual",
         )
 
     async def async_added_to_hass(self) -> None:

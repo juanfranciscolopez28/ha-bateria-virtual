@@ -8,6 +8,8 @@ cards:
       - entity: sensor.bateria_virtual_grid_import_month
       - entity: sensor.bateria_virtual_surplus_value_month
       - entity: sensor.bateria_virtual_current_energy_price
+      - entity: sensor.bateria_virtual_days_until_billing_close
+        name: Días para el corte
   - type: gauge
     name: Saldo batería virtual
     entity: sensor.bateria_virtual_virtual_battery_balance
@@ -25,7 +27,21 @@ cards:
         name: Factura final estimada
       - entity: sensor.bateria_virtual_projected_balance_end_of_month
         name: Saldo proyectado fin de mes
+  - type: entities
+    title: Ahorro y cobertura
+    entities:
+      - entity: sensor.bateria_virtual_lifetime_savings
+        name: Ahorro acumulado
+      - entity: sensor.bateria_virtual_balance_coverage_months
+        name: Cobertura del saldo (meses)
+      - entity: sensor.bateria_virtual_days_until_billing_close
+        name: Días hasta el corte de facturación
   - type: statistics-graph
     title: Saldo batería virtual (histórico)
     entities:
       - sensor.bateria_virtual_virtual_battery_balance
+  - type: statistics-graph
+    title: Factura final y ahorro acumulado (histórico)
+    entities:
+      - sensor.bateria_virtual_estimated_final_bill
+      - sensor.bateria_virtual_lifetime_savings

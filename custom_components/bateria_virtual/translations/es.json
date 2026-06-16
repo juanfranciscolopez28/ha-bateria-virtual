@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Batería Virtual",
-        "description": "Selecciona tus sensores existentes y los parámetros de la batería virtual de Niba.",
+        "description": "Selecciona tus sensores existentes y los parámetros de tu batería virtual.",
         "data": {
           "production": "Sensor de producción solar (kWh)",
           "consumption": "Sensor de consumo del hogar (kWh)",
@@ -60,7 +60,10 @@
       "estimated_bill": { "name": "Factura estimada" },
       "estimated_discount": { "name": "Descuento estimado" },
       "estimated_final_bill": { "name": "Factura final estimada" },
-      "projected_balance_end_of_month": { "name": "Saldo proyectado fin de mes" }
+      "projected_balance_end_of_month": { "name": "Saldo proyectado fin de mes" },
+      "lifetime_savings": { "name": "Ahorro acumulado" },
+      "balance_coverage_months": { "name": "Cobertura del saldo" },
+      "days_until_billing_close": { "name": "Días hasta el corte de facturación" }
     }
   }
 }

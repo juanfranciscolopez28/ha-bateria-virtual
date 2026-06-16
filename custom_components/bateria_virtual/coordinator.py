@@ -188,8 +188,9 @@ class BVCoordinator:
             return
 
         bill = self._estimate_bill(today)
-        new_balance, _ = calc.apply_discount(self.state.balance, bill.total)
+        new_balance, discount = calc.apply_discount(self.state.balance, bill.total)
         self.state.balance = new_balance
+        self.state.lifetime_savings += discount
         # Reset monthly counters for the new period.
         self.state.surplus_value_month = 0.0
         self.state.import_kwh_p1 = 0.0
@@ -267,3 +268,27 @@ class BVCoordinator:
 
     def current_bill(self) -> calc.BillBreakdown:
         return self._estimate_bill(dt_util.now().date())
+
+    def _monthly_bill_estimate(self, today: dt.date) -> float:
+        """Projected full-cycle bill (€): power for the whole cycle plus a
+        linear projection of the energy accrued so far."""
+        bill = self._estimate_bill(today)
+        elapsed = self._days_in_period(today)
+        if not self.state.period_start:
+            return bill.total
+        start = dt.date.fromisoformat(self.state.period_start)
+        total_days = calc.cycle_total_days(start, int(self.config[CONF_BILLING_DAY]))
+        return bill.total * total_days / elapsed
+
+    def balance_coverage_months(self) -> float:
+        """How many monthly bills the current balance could cover."""
+        monthly = self._monthly_bill_estimate(dt_util.now().date())
+        if monthly <= 0:
+            return 0.0
+        return self.state.balance / monthly
+
+    def days_until_billing_close(self) -> int:
+        """Whole days remaining until the next billing close."""
+        return calc.days_until_billing_close(
+            dt_util.now().date(), int(self.config[CONF_BILLING_DAY])
+        )

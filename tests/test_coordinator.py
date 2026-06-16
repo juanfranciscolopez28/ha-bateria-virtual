@@ -1,4 +1,6 @@
 """Tests for the coordinator's surplus accumulation."""
+import datetime as dt
+
 import pytest
 from homeassistant.core import HomeAssistant
 
@@ -68,6 +70,26 @@ async def test_meter_reset_does_not_reduce_balance(hass: HomeAssistant):
     coord.handle_export_total(100.0)
     coord.handle_export_total(2.0)  # sensor reset
     assert coord.state.balance == 5.0
+
+
+@pytest.mark.asyncio
+async def test_settlement_accumulates_lifetime_savings(hass: HomeAssistant):
+    coord = BVCoordinator(hass, entry_id="t4", config=CONFIG)
+    await coord.async_initialise()
+    coord.state.period_start = "2026-06-01"
+    coord.state.balance = 5.0
+    coord.state.import_kwh_p1 = 10.0
+    assert coord.state.lifetime_savings == 0.0
+
+    # Billing day (1) -> the bill is discounted from the balance and the
+    # discount is added to the lifetime savings counter.
+    discounted = coord.state.balance
+    coord.run_settlement(dt.date(2026, 6, 1))
+
+    assert coord.state.lifetime_savings > 0
+    assert round(coord.state.lifetime_savings, 2) == round(
+        discounted - coord.state.balance, 2
+    )
 
 
 @pytest.mark.asyncio

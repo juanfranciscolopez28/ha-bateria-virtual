@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Bateria Virtual",
-        "description": "Select your existing sensors and Niba's virtual-battery parameters.",
+        "description": "Select your existing sensors and your virtual-battery parameters.",
         "data": {
           "production": "Solar production sensor (kWh)",
           "consumption": "Home consumption sensor (kWh)",
@@ -60,7 +60,10 @@
       "estimated_bill": { "name": "Estimated bill" },
       "estimated_discount": { "name": "Estimated discount" },
       "estimated_final_bill": { "name": "Estimated final bill" },
-      "projected_balance_end_of_month": { "name": "Projected balance end of month" }
+      "projected_balance_end_of_month": { "name": "Projected balance end of month" },
+      "lifetime_savings": { "name": "Total savings" },
+      "balance_coverage_months": { "name": "Balance coverage" },
+      "days_until_billing_close": { "name": "Days until billing close" }
     }
   }
 }
