@@ -5,6 +5,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from homeassistant.components.sensor import (
+    ENTITY_ID_FORMAT,
     SensorDeviceClass,
     SensorEntity,
     SensorStateClass,
@@ -13,6 +14,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfEnergy
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.entity import async_generate_entity_id
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
@@ -132,7 +134,7 @@ async def async_setup_entry(
 ) -> None:
     coordinator: BVCoordinator = hass.data[DOMAIN][entry.entry_id]
     async_add_entities(
-        BVSensor(coordinator, entry, description) for description in SENSORS
+        BVSensor(hass, coordinator, entry, description) for description in SENSORS
     )
 
 
@@ -144,6 +146,7 @@ class BVSensor(SensorEntity):
 
     def __init__(
         self,
+        hass: HomeAssistant,
         coordinator: BVCoordinator,
         entry: ConfigEntry,
         description: BVSensorDescription,
@@ -152,6 +155,12 @@ class BVSensor(SensorEntity):
         self._description = description
         self._attr_translation_key = description.key
         self._attr_unique_id = f"{entry.entry_id}_{description.key}"
+        # Force a stable, language-independent entity_id from the key, so the
+        # localized friendly name doesn't leak into the entity_id (a Spanish HA
+        # would otherwise produce e.g. sensor.bateria_virtual_saldo_bateria_virtual).
+        self.entity_id = async_generate_entity_id(
+            ENTITY_ID_FORMAT, f"{DOMAIN}_{description.key}", hass=hass
+        )
         self._attr_native_unit_of_measurement = description.unit
         self._attr_device_class = description.device_class
         self._attr_state_class = description.state_class
