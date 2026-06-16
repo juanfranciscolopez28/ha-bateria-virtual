@@ -13,8 +13,10 @@
           "surplus_price": "Surplus price (€/kWh, taxes excluded)",
           "initial_balance": "Initial virtual-battery balance (€)",
           "balance_expiry_months": "Balance expiry (months, 0 = never)",
-          "contracted_power_kw": "Contracted power (kW)",
-          "power_term_eur_kw_day": "Power term (€/kW·day)",
+          "contracted_power_p1_kw": "Contracted power P1 / peak (kW)",
+          "power_term_p1_eur_kw_day": "Power term P1 / peak (€/kW·day)",
+          "contracted_power_p2_kw": "Contracted power P2 / off-peak (kW)",
+          "power_term_p2_eur_kw_day": "Power term P2 / off-peak (€/kW·day)",
           "electricity_tax_pct": "Electricity tax (%)",
           "vat_pct": "VAT / IGIC (%)",
           "billing_day": "Billing close day"
@@ -29,13 +31,26 @@
         "data": {
           "surplus_price": "Surplus price (€/kWh, taxes excluded)",
           "balance_expiry_months": "Balance expiry (months, 0 = never)",
-          "contracted_power_kw": "Contracted power (kW)",
-          "power_term_eur_kw_day": "Power term (€/kW·day)",
+          "contracted_power_p1_kw": "Contracted power P1 / peak (kW)",
+          "power_term_p1_eur_kw_day": "Power term P1 / peak (€/kW·day)",
+          "contracted_power_p2_kw": "Contracted power P2 / off-peak (kW)",
+          "power_term_p2_eur_kw_day": "Power term P2 / off-peak (€/kW·day)",
           "electricity_tax_pct": "Electricity tax (%)",
           "vat_pct": "VAT / IGIC (%)",
           "billing_day": "Billing close day"
         }
       }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "virtual_battery_balance": { "name": "Virtual battery balance" },
+      "surplus_value_month": { "name": "Surplus value this month" },
+      "grid_import_month": { "name": "Grid import this month" },
+      "estimated_bill": { "name": "Estimated bill" },
+      "estimated_discount": { "name": "Estimated discount" },
+      "estimated_final_bill": { "name": "Estimated final bill" },
+      "projected_balance_end_of_month": { "name": "Projected balance end of month" }
     }
   }
 }

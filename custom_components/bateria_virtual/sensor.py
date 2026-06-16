@@ -117,7 +117,7 @@ class BVSensor(SensorEntity):
     ) -> None:
         self._coordinator = coordinator
         self._description = description
-        self._attr_name = description.name
+        self._attr_translation_key = description.key
         self._attr_unique_id = f"{entry.entry_id}_{description.key}"
         self._attr_native_unit_of_measurement = description.unit
         self._attr_device_class = description.device_class

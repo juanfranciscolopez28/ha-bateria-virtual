@@ -13,8 +13,10 @@
           "surplus_price": "Precio del excedente (€/kWh, sin impuestos)",
           "initial_balance": "Saldo inicial de la batería virtual (€)",
           "balance_expiry_months": "Caducidad del saldo (meses, 0 = nunca)",
-          "contracted_power_kw": "Potencia contratada (kW)",
-          "power_term_eur_kw_day": "Término de potencia (€/kW·día)",
+          "contracted_power_p1_kw": "Potencia contratada P1 / punta (kW)",
+          "power_term_p1_eur_kw_day": "Término de potencia P1 / punta (€/kW·día)",
+          "contracted_power_p2_kw": "Potencia contratada P2 / valle (kW)",
+          "power_term_p2_eur_kw_day": "Término de potencia P2 / valle (€/kW·día)",
           "electricity_tax_pct": "Impuesto eléctrico (%)",
           "vat_pct": "IVA / IGIC (%)",
           "billing_day": "Día de corte de facturación"
@@ -29,13 +31,26 @@
         "data": {
           "surplus_price": "Precio del excedente (€/kWh, sin impuestos)",
           "balance_expiry_months": "Caducidad del saldo (meses, 0 = nunca)",
-          "contracted_power_kw": "Potencia contratada (kW)",
-          "power_term_eur_kw_day": "Término de potencia (€/kW·día)",
+          "contracted_power_p1_kw": "Potencia contratada P1 / punta (kW)",
+          "power_term_p1_eur_kw_day": "Término de potencia P1 / punta (€/kW·día)",
+          "contracted_power_p2_kw": "Potencia contratada P2 / valle (kW)",
+          "power_term_p2_eur_kw_day": "Término de potencia P2 / valle (€/kW·día)",
           "electricity_tax_pct": "Impuesto eléctrico (%)",
           "vat_pct": "IVA / IGIC (%)",
           "billing_day": "Día de corte de facturación"
         }
       }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "virtual_battery_balance": { "name": "Saldo batería virtual" },
+      "surplus_value_month": { "name": "Valor del excedente este mes" },
+      "grid_import_month": { "name": "Importación de red este mes" },
+      "estimated_bill": { "name": "Factura estimada" },
+      "estimated_discount": { "name": "Descuento estimado" },
+      "estimated_final_bill": { "name": "Factura final estimada" },
+      "projected_balance_end_of_month": { "name": "Saldo proyectado fin de mes" }
     }
   }
 }

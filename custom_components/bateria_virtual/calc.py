@@ -33,15 +33,24 @@ def surplus_value(delta_kwh: float, surplus_price: float) -> float:
 def estimate_bill(
     import_kwh: float,
     avg_price: float,
-    contracted_power_kw: float,
-    power_term_eur_kw_day: float,
+    contracted_power_p1_kw: float,
+    power_term_p1_eur_kw_day: float,
+    contracted_power_p2_kw: float,
+    power_term_p2_eur_kw_day: float,
     days: int,
     electricity_tax_pct: float,
     vat_pct: float,
 ) -> BillBreakdown:
-    """Estimate a full bill: energy + power + electricity tax + VAT/IGIC."""
+    """Estimate a full bill: energy + power + electricity tax + VAT/IGIC.
+
+    The power term sums the two Spanish contracted-power periods (P1 punta and
+    P2 valle), each with its own contracted kW and its own €/kW·day price.
+    """
     energy = import_kwh * avg_price
-    power = contracted_power_kw * power_term_eur_kw_day * days
+    power = (
+        contracted_power_p1_kw * power_term_p1_eur_kw_day
+        + contracted_power_p2_kw * power_term_p2_eur_kw_day
+    ) * days
     base = energy + power
     electricity_tax = base * electricity_tax_pct / 100.0
     taxed_base = base + electricity_tax

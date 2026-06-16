@@ -16,19 +16,25 @@ from .const import (
     CONF_BALANCE_EXPIRY_MONTHS,
     CONF_BILLING_DAY,
     CONF_CONSUMPTION,
-    CONF_CONTRACTED_POWER_KW,
+    CONF_CONTRACTED_POWER_P1_KW,
+    CONF_CONTRACTED_POWER_P2_KW,
     CONF_ELECTRICITY_TAX_PCT,
     CONF_GRID_EXPORT,
     CONF_GRID_IMPORT,
     CONF_INITIAL_BALANCE,
-    CONF_POWER_TERM_EUR_KW_DAY,
+    CONF_POWER_TERM_P1_EUR_KW_DAY,
+    CONF_POWER_TERM_P2_EUR_KW_DAY,
     CONF_PRICE,
     CONF_PRODUCTION,
     CONF_SURPLUS_PRICE,
     CONF_VAT_PCT,
     DEFAULT_BALANCE_EXPIRY_MONTHS,
     DEFAULT_BILLING_DAY,
+    DEFAULT_CONTRACTED_POWER_P1_KW,
+    DEFAULT_CONTRACTED_POWER_P2_KW,
     DEFAULT_ELECTRICITY_TAX_PCT,
+    DEFAULT_POWER_TERM_P1_EUR_KW_DAY,
+    DEFAULT_POWER_TERM_P2_EUR_KW_DAY,
     DEFAULT_SURPLUS_PRICE,
     DOMAIN,
 )
@@ -53,8 +59,18 @@ _PARAM_SCHEMA = {
     vol.Required(
         CONF_BALANCE_EXPIRY_MONTHS, default=DEFAULT_BALANCE_EXPIRY_MONTHS
     ): _number(0, 1),
-    vol.Required(CONF_CONTRACTED_POWER_KW, default=4.6): _number(0, 0.1),
-    vol.Required(CONF_POWER_TERM_EUR_KW_DAY, default=0.10): _number(0, "any"),
+    vol.Required(
+        CONF_CONTRACTED_POWER_P1_KW, default=DEFAULT_CONTRACTED_POWER_P1_KW
+    ): _number(0, 0.1),
+    vol.Required(
+        CONF_POWER_TERM_P1_EUR_KW_DAY, default=DEFAULT_POWER_TERM_P1_EUR_KW_DAY
+    ): _number(0, "any"),
+    vol.Required(
+        CONF_CONTRACTED_POWER_P2_KW, default=DEFAULT_CONTRACTED_POWER_P2_KW
+    ): _number(0, 0.1),
+    vol.Required(
+        CONF_POWER_TERM_P2_EUR_KW_DAY, default=DEFAULT_POWER_TERM_P2_EUR_KW_DAY
+    ): _number(0, "any"),
     vol.Required(
         CONF_ELECTRICITY_TAX_PCT, default=DEFAULT_ELECTRICITY_TAX_PCT
     ): _number(0, 0.01),
@@ -116,12 +132,28 @@ class BVOptionsFlow(OptionsFlow):
                     ),
                 ): _number(0, 1),
                 vol.Required(
-                    CONF_CONTRACTED_POWER_KW,
-                    default=current.get(CONF_CONTRACTED_POWER_KW, 4.6),
+                    CONF_CONTRACTED_POWER_P1_KW,
+                    default=current.get(
+                        CONF_CONTRACTED_POWER_P1_KW, DEFAULT_CONTRACTED_POWER_P1_KW
+                    ),
                 ): _number(0, 0.1),
                 vol.Required(
-                    CONF_POWER_TERM_EUR_KW_DAY,
-                    default=current.get(CONF_POWER_TERM_EUR_KW_DAY, 0.10),
+                    CONF_POWER_TERM_P1_EUR_KW_DAY,
+                    default=current.get(
+                        CONF_POWER_TERM_P1_EUR_KW_DAY, DEFAULT_POWER_TERM_P1_EUR_KW_DAY
+                    ),
+                ): _number(0, "any"),
+                vol.Required(
+                    CONF_CONTRACTED_POWER_P2_KW,
+                    default=current.get(
+                        CONF_CONTRACTED_POWER_P2_KW, DEFAULT_CONTRACTED_POWER_P2_KW
+                    ),
+                ): _number(0, 0.1),
+                vol.Required(
+                    CONF_POWER_TERM_P2_EUR_KW_DAY,
+                    default=current.get(
+                        CONF_POWER_TERM_P2_EUR_KW_DAY, DEFAULT_POWER_TERM_P2_EUR_KW_DAY
+                    ),
                 ): _number(0, "any"),
                 vol.Required(
                     CONF_ELECTRICITY_TAX_PCT,

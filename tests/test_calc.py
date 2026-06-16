@@ -23,8 +23,10 @@ def test_estimate_bill_full_breakdown():
     bill = estimate_bill(
         import_kwh=100.0,
         avg_price=0.20,
-        contracted_power_kw=4.6,
-        power_term_eur_kw_day=0.10,
+        contracted_power_p1_kw=4.6,
+        power_term_p1_eur_kw_day=0.10,
+        contracted_power_p2_kw=0.0,
+        power_term_p2_eur_kw_day=0.0,
         days=30,
         electricity_tax_pct=5.11,
         vat_pct=21.0,
@@ -34,6 +36,22 @@ def test_estimate_bill_full_breakdown():
     assert bill.energy == 20.0
     assert round(bill.power, 5) == 13.8
     assert round(bill.total, 2) == 42.99
+
+
+def test_estimate_bill_sums_both_power_periods():
+    bill = estimate_bill(
+        import_kwh=0.0,
+        avg_price=0.0,
+        contracted_power_p1_kw=4.6,
+        power_term_p1_eur_kw_day=0.10,
+        contracted_power_p2_kw=4.6,
+        power_term_p2_eur_kw_day=0.02,
+        days=30,
+        electricity_tax_pct=0.0,
+        vat_pct=0.0,
+    )
+    # power: (4.6*0.10 + 4.6*0.02) * 30 = (0.46 + 0.092) * 30 = 16.56
+    assert round(bill.power, 5) == 16.56
 
 
 def test_apply_discount_partial():
