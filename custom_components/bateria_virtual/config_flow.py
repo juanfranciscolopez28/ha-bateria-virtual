@@ -89,14 +89,14 @@ class BVConfigFlow(ConfigFlow, domain=DOMAIN):
     @staticmethod
     @callback
     def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
-        return BVOptionsFlow(config_entry)
+        return BVOptionsFlow()
 
 
 class BVOptionsFlow(OptionsFlow):
-    """Edit numeric parameters after install."""
+    """Edit numeric parameters after install.
 
-    def __init__(self, config_entry: ConfigEntry) -> None:
-        self.config_entry = config_entry
+    `self.config_entry` is provided automatically by Home Assistant.
+    """
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None):
         if user_input is not None:
