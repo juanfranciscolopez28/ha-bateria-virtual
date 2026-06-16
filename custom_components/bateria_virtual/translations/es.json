@@ -1,0 +1,41 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Batería Virtual",
+        "description": "Selecciona tus sensores existentes y los parámetros de la batería virtual de Niba.",
+        "data": {
+          "production": "Sensor de producción solar (kWh)",
+          "consumption": "Sensor de consumo del hogar (kWh)",
+          "grid_import": "Sensor de importación de red (kWh)",
+          "grid_export": "Sensor de exportación / excedente (kWh)",
+          "price": "Sensor de precio de compra actual (€/kWh)",
+          "surplus_price": "Precio del excedente (€/kWh, sin impuestos)",
+          "initial_balance": "Saldo inicial de la batería virtual (€)",
+          "balance_expiry_months": "Caducidad del saldo (meses, 0 = nunca)",
+          "contracted_power_kw": "Potencia contratada (kW)",
+          "power_term_eur_kw_day": "Término de potencia (€/kW·día)",
+          "electricity_tax_pct": "Impuesto eléctrico (%)",
+          "vat_pct": "IVA / IGIC (%)",
+          "billing_day": "Día de corte de facturación"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Parámetros de Batería Virtual",
+        "data": {
+          "surplus_price": "Precio del excedente (€/kWh, sin impuestos)",
+          "balance_expiry_months": "Caducidad del saldo (meses, 0 = nunca)",
+          "contracted_power_kw": "Potencia contratada (kW)",
+          "power_term_eur_kw_day": "Término de potencia (€/kW·día)",
+          "electricity_tax_pct": "Impuesto eléctrico (%)",
+          "vat_pct": "IVA / IGIC (%)",
+          "billing_day": "Día de corte de facturación"
+        }
+      }
+    }
+  }
+}

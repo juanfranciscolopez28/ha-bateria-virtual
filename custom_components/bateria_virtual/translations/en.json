@@ -1,0 +1,41 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Bateria Virtual",
+        "description": "Select your existing sensors and Niba's virtual-battery parameters.",
+        "data": {
+          "production": "Solar production sensor (kWh)",
+          "consumption": "Home consumption sensor (kWh)",
+          "grid_import": "Grid import sensor (kWh)",
+          "grid_export": "Grid export / surplus sensor (kWh)",
+          "price": "Current purchase price sensor (€/kWh)",
+          "surplus_price": "Surplus price (€/kWh, taxes excluded)",
+          "initial_balance": "Initial virtual-battery balance (€)",
+          "balance_expiry_months": "Balance expiry (months, 0 = never)",
+          "contracted_power_kw": "Contracted power (kW)",
+          "power_term_eur_kw_day": "Power term (€/kW·day)",
+          "electricity_tax_pct": "Electricity tax (%)",
+          "vat_pct": "VAT / IGIC (%)",
+          "billing_day": "Billing close day"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Bateria Virtual parameters",
+        "data": {
+          "surplus_price": "Surplus price (€/kWh, taxes excluded)",
+          "balance_expiry_months": "Balance expiry (months, 0 = never)",
+          "contracted_power_kw": "Contracted power (kW)",
+          "power_term_eur_kw_day": "Power term (€/kW·day)",
+          "electricity_tax_pct": "Electricity tax (%)",
+          "vat_pct": "VAT / IGIC (%)",
+          "billing_day": "Billing close day"
+        }
+      }
+    }
+  }
+}

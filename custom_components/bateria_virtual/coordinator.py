@@ -1,0 +1,220 @@
+"""Runtime coordinator for a Bateria Virtual config entry."""
+from __future__ import annotations
+
+import datetime as dt
+import logging
+
+from homeassistant.core import Event, HomeAssistant, callback
+from homeassistant.helpers.event import (
+    async_track_state_change_event,
+    async_track_time_change,
+)
+from homeassistant.util import dt as dt_util
+
+from . import calc
+from .const import (
+    CONF_BALANCE_EXPIRY_MONTHS,
+    CONF_BILLING_DAY,
+    CONF_CONTRACTED_POWER_KW,
+    CONF_ELECTRICITY_TAX_PCT,
+    CONF_GRID_EXPORT,
+    CONF_GRID_IMPORT,
+    CONF_INITIAL_BALANCE,
+    CONF_POWER_TERM_EUR_KW_DAY,
+    CONF_PRICE,
+    CONF_SURPLUS_PRICE,
+    CONF_VAT_PCT,
+)
+from .storage import BVState, BVStore
+
+_LOGGER = logging.getLogger(__name__)
+
+
+def _to_float(value) -> float | None:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+class BVCoordinator:
+    """Owns the persistent state and reacts to source-sensor changes."""
+
+    def __init__(self, hass: HomeAssistant, entry_id: str, config: dict) -> None:
+        self.hass = hass
+        self.entry_id = entry_id
+        self.config = config
+        self._store = BVStore(hass, entry_id)
+        self.state: BVState = BVState()
+        self._unsub: list = []
+        self._listeners: list = []  # sensor update callbacks
+        self._last_import_total: float | None = None
+
+    async def async_initialise(self) -> None:
+        """Load persisted state or seed it from the configured initial balance."""
+        loaded = await self._store.async_load()
+        if loaded is not None:
+            self.state = loaded
+            return
+        today = dt_util.now().date()
+        self.state = BVState(
+            balance=float(self.config[CONF_INITIAL_BALANCE]),
+            period_start=today.replace(day=1).isoformat(),
+            buckets=[],
+        )
+        await self._store.async_save(self.state)
+
+    async def async_start(self) -> None:
+        """Attach listeners to source entities and the daily settlement timer."""
+        export_entity = self.config[CONF_GRID_EXPORT]
+        self._unsub.append(
+            async_track_state_change_event(
+                self.hass, [export_entity], self._on_export_event
+            )
+        )
+        import_entity = self.config[CONF_GRID_IMPORT]
+        self._unsub.append(
+            async_track_state_change_event(
+                self.hass, [import_entity], self._on_import_event
+            )
+        )
+        # Run the billing settlement once a day at 00:05.
+        self._unsub.append(
+            async_track_time_change(
+                self.hass, self._on_daily_tick, hour=0, minute=5, second=0
+            )
+        )
+
+    async def async_stop(self) -> None:
+        for unsub in self._unsub:
+            unsub()
+        self._unsub.clear()
+
+    # --- listener registration for sensors -------------------------------
+
+    @callback
+    def add_listener(self, update_cb) -> None:
+        self._listeners.append(update_cb)
+
+    @callback
+    def _notify(self) -> None:
+        for cb in self._listeners:
+            cb()
+
+    # --- event handlers --------------------------------------------------
+
+    @callback
+    def _on_export_event(self, event: Event) -> None:
+        new_state = event.data.get("new_state")
+        if new_state is None:
+            return
+        total = _to_float(new_state.state)
+        if total is None:
+            return
+        self.handle_export_total(total)
+        self.hass.async_create_task(self._store.async_save(self.state))
+        self._notify()
+
+    @callback
+    def _on_import_event(self, event: Event) -> None:
+        new_state = event.data.get("new_state")
+        if new_state is None:
+            return
+        total = _to_float(new_state.state)
+        if total is None:
+            return
+        self.handle_import_total(total)
+        self.hass.async_create_task(self._store.async_save(self.state))
+        self._notify()
+
+    async def _on_daily_tick(self, now: dt.datetime) -> None:
+        self.run_settlement(now.date())
+        await self._store.async_save(self.state)
+        self._notify()
+
+    # --- pure-ish state transitions (unit-tested) ------------------------
+
+    def handle_export_total(self, total: float) -> None:
+        """Update balance from a new export total. First reading primes baseline."""
+        if self.state.last_export_total is None:
+            self.state.last_export_total = total
+            return
+        delta = total - self.state.last_export_total
+        self.state.last_export_total = total
+        value = calc.surplus_value(delta, float(self.config[CONF_SURPLUS_PRICE]))
+        if value <= 0:
+            return
+        self.state.balance += value
+        self.state.surplus_value_month += value
+        self._add_to_current_bucket(value)
+
+    def handle_import_total(self, total: float) -> None:
+        if self._last_import_total is None:
+            self._last_import_total = total
+            return
+        delta = total - self._last_import_total
+        self._last_import_total = total
+        if delta > 0:
+            self.state.import_kwh_month += delta
+
+    def run_settlement(self, today: dt.date) -> None:
+        """Expire old buckets, and on billing day apply the estimated bill."""
+        kept, expired = calc.next_balance_after_expiry(
+            [tuple(b) for b in self.state.buckets],
+            now=today,
+            expiry_months=int(self.config[CONF_BALANCE_EXPIRY_MONTHS]),
+        )
+        if expired > 0:
+            self.state.balance = max(0.0, self.state.balance - expired)
+            self.state.buckets = [list(b) for b in kept]
+
+        if not calc.is_billing_close_day(today, int(self.config[CONF_BILLING_DAY])):
+            return
+
+        bill = self._estimate_bill(today)
+        new_balance, _ = calc.apply_discount(self.state.balance, bill.total)
+        self.state.balance = new_balance
+        # Reset monthly counters for the new period.
+        self.state.surplus_value_month = 0.0
+        self.state.import_kwh_month = 0.0
+        self.state.period_start = today.isoformat()
+
+    # --- helpers ---------------------------------------------------------
+
+    def _add_to_current_bucket(self, value: float) -> None:
+        today = dt_util.now().date()
+        if (
+            self.state.buckets
+            and self.state.buckets[-1][0] == today.year
+            and self.state.buckets[-1][1] == today.month
+        ):
+            self.state.buckets[-1][2] += value
+        else:
+            self.state.buckets.append([today.year, today.month, value])
+
+    def _avg_price(self) -> float:
+        price_state = self.hass.states.get(self.config[CONF_PRICE])
+        if price_state is None:
+            return 0.0
+        price = _to_float(price_state.state)
+        return price if price is not None else 0.0
+
+    def _days_in_period(self, today: dt.date) -> int:
+        if not self.state.period_start:
+            return today.day
+        start = dt.date.fromisoformat(self.state.period_start)
+        return max(1, (today - start).days)
+
+    def _estimate_bill(self, today: dt.date) -> calc.BillBreakdown:
+        return calc.estimate_bill(
+            import_kwh=self.state.import_kwh_month,
+            avg_price=self._avg_price(),
+            contracted_power_kw=float(self.config[CONF_CONTRACTED_POWER_KW]),
+            power_term_eur_kw_day=float(self.config[CONF_POWER_TERM_EUR_KW_DAY]),
+            days=self._days_in_period(today),
+            electricity_tax_pct=float(self.config[CONF_ELECTRICITY_TAX_PCT]),
+            vat_pct=float(self.config[CONF_VAT_PCT]),
+        )
+
+    def current_bill(self) -> calc.BillBreakdown:
+        return self._estimate_bill(dt_util.now().date())

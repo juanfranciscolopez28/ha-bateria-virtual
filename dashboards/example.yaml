@@ -1,0 +1,32 @@
+# Example dashboard. Paste into a new dashboard (raw config editor) and adjust
+# entity_ids if yours differ. Uses only native HA cards.
+title: Batería Virtual
+views:
+  - title: Solar & Batería Virtual
+    cards:
+      - type: glance
+        title: Hoy
+        entities:
+          - entity: sensor.bateria_virtual_grid_import_month
+          - entity: sensor.bateria_virtual_surplus_value_month
+      - type: gauge
+        name: Saldo batería virtual
+        entity: sensor.bateria_virtual_virtual_battery_balance
+        unit: €
+        min: 0
+        max: 100
+      - type: entities
+        title: Próxima factura (estimación)
+        entities:
+          - entity: sensor.bateria_virtual_estimated_bill
+            name: Factura estimada
+          - entity: sensor.bateria_virtual_estimated_discount
+            name: Descuento batería virtual
+          - entity: sensor.bateria_virtual_estimated_final_bill
+            name: Factura final estimada
+          - entity: sensor.bateria_virtual_projected_balance_end_of_month
+            name: Saldo proyectado fin de mes
+      - type: statistics-graph
+        title: Saldo batería virtual (histórico)
+        entities:
+          - sensor.bateria_virtual_virtual_battery_balance
