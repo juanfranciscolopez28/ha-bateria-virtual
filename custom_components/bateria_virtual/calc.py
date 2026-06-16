@@ -31,8 +31,12 @@ def surplus_value(delta_kwh: float, surplus_price: float) -> float:
 
 
 def estimate_bill(
-    import_kwh: float,
-    avg_price: float,
+    import_kwh_p1: float,
+    import_kwh_p2: float,
+    import_kwh_p3: float,
+    energy_price_p1: float,
+    energy_price_p2: float,
+    energy_price_p3: float,
     contracted_power_p1_kw: float,
     power_term_p1_eur_kw_day: float,
     contracted_power_p2_kw: float,
@@ -43,10 +47,16 @@ def estimate_bill(
 ) -> BillBreakdown:
     """Estimate a full bill: energy + power + electricity tax + VAT/IGIC.
 
-    The power term sums the two Spanish contracted-power periods (P1 punta and
-    P2 valle), each with its own contracted kW and its own €/kW·day price.
+    The energy term sums the three Spanish energy periods (P1 punta, P2 llano,
+    P3 valle), each with its own imported kWh and its own €/kWh price. The power
+    term sums the two contracted-power periods (P1 punta, P2 valle), each with
+    its own contracted kW and its own €/kW·day price.
     """
-    energy = import_kwh * avg_price
+    energy = (
+        import_kwh_p1 * energy_price_p1
+        + import_kwh_p2 * energy_price_p2
+        + import_kwh_p3 * energy_price_p3
+    )
     power = (
         contracted_power_p1_kw * power_term_p1_eur_kw_day
         + contracted_power_p2_kw * power_term_p2_eur_kw_day
@@ -63,6 +73,17 @@ def estimate_bill(
         vat=vat,
         total=total,
     )
+
+
+def price_with_taxes(
+    base_price: float, electricity_tax_pct: float, vat_pct: float
+) -> float:
+    """Per-kWh price with electricity tax then VAT applied, like the template:
+
+    precio × (1 + impuesto_eléctrico/100) × (1 + IVA/100)
+    """
+    taxed = base_price * (1 + electricity_tax_pct / 100.0)
+    return taxed * (1 + vat_pct / 100.0)
 
 
 def apply_discount(balance: float, bill: float) -> tuple[float, float]:

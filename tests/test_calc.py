@@ -6,6 +6,7 @@ from custom_components.bateria_virtual.calc import (
     estimate_bill,
     is_billing_close_day,
     next_balance_after_expiry,
+    price_with_taxes,
     surplus_value,
 )
 
@@ -21,8 +22,12 @@ def test_surplus_value_negative_delta_is_clamped_to_zero():
 
 def test_estimate_bill_full_breakdown():
     bill = estimate_bill(
-        import_kwh=100.0,
-        avg_price=0.20,
+        import_kwh_p1=100.0,
+        import_kwh_p2=0.0,
+        import_kwh_p3=0.0,
+        energy_price_p1=0.20,
+        energy_price_p2=0.0,
+        energy_price_p3=0.0,
         contracted_power_p1_kw=4.6,
         power_term_p1_eur_kw_day=0.10,
         contracted_power_p2_kw=0.0,
@@ -38,10 +43,34 @@ def test_estimate_bill_full_breakdown():
     assert round(bill.total, 2) == 42.99
 
 
+def test_estimate_bill_sums_three_energy_periods():
+    bill = estimate_bill(
+        import_kwh_p1=10.0,
+        import_kwh_p2=20.0,
+        import_kwh_p3=30.0,
+        energy_price_p1=0.196,
+        energy_price_p2=0.169,
+        energy_price_p3=0.089,
+        contracted_power_p1_kw=0.0,
+        power_term_p1_eur_kw_day=0.0,
+        contracted_power_p2_kw=0.0,
+        power_term_p2_eur_kw_day=0.0,
+        days=30,
+        electricity_tax_pct=0.0,
+        vat_pct=0.0,
+    )
+    # energy: 10*0.196 + 20*0.169 + 30*0.089 = 1.96 + 3.38 + 2.67 = 8.01
+    assert round(bill.energy, 5) == 8.01
+
+
 def test_estimate_bill_sums_both_power_periods():
     bill = estimate_bill(
-        import_kwh=0.0,
-        avg_price=0.0,
+        import_kwh_p1=0.0,
+        import_kwh_p2=0.0,
+        import_kwh_p3=0.0,
+        energy_price_p1=0.0,
+        energy_price_p2=0.0,
+        energy_price_p3=0.0,
         contracted_power_p1_kw=4.6,
         power_term_p1_eur_kw_day=0.10,
         contracted_power_p2_kw=4.6,
@@ -52,6 +81,12 @@ def test_estimate_bill_sums_both_power_periods():
     )
     # power: (4.6*0.10 + 4.6*0.02) * 30 = (0.46 + 0.092) * 30 = 16.56
     assert round(bill.power, 5) == 16.56
+
+
+def test_price_with_taxes_applies_electricity_tax_then_vat():
+    # 0.196 * 1.0511269632 * 1.21 = 0.249302...
+    result = price_with_taxes(0.196, electricity_tax_pct=5.11269632, vat_pct=21.0)
+    assert round(result, 6) == round(0.196 * 1.0511269632 * 1.21, 6)
 
 
 def test_apply_discount_partial():

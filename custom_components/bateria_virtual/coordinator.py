@@ -18,14 +18,20 @@ from .const import (
     CONF_CONTRACTED_POWER_P1_KW,
     CONF_CONTRACTED_POWER_P2_KW,
     CONF_ELECTRICITY_TAX_PCT,
+    CONF_ENERGY_PRICE_P1,
+    CONF_ENERGY_PRICE_P2,
+    CONF_ENERGY_PRICE_P3,
     CONF_GRID_EXPORT,
     CONF_GRID_IMPORT,
     CONF_INITIAL_BALANCE,
+    CONF_PERIOD_SENSOR,
     CONF_POWER_TERM_P1_EUR_KW_DAY,
     CONF_POWER_TERM_P2_EUR_KW_DAY,
-    CONF_PRICE,
     CONF_SURPLUS_PRICE,
     CONF_VAT_PCT,
+    ENERGY_PERIODS,
+    PERIOD_ATTRIBUTE,
+    PERIOD_P1,
 )
 from .storage import BVState, BVStore
 
@@ -51,6 +57,7 @@ class BVCoordinator:
         self._unsub: list = []
         self._listeners: list = []  # sensor update callbacks
         self._last_import_total: float | None = None
+        self._last_period: str = PERIOD_P1  # fallback when sensor unavailable
 
     async def async_initialise(self) -> None:
         """Load persisted state or seed it from the configured initial balance."""
@@ -125,7 +132,7 @@ class BVCoordinator:
         total = _to_float(new_state.state)
         if total is None:
             return
-        self.handle_import_total(total)
+        self.handle_import_total(total, self._current_period())
         self.hass.async_create_task(self._store.async_save(self.state))
         self._notify()
 
@@ -150,14 +157,21 @@ class BVCoordinator:
         self.state.surplus_value_month += value
         self._add_to_current_bucket(value)
 
-    def handle_import_total(self, total: float) -> None:
+    def handle_import_total(self, total: float, period: str) -> None:
+        """Accumulate an import delta into the bucket of the active energy period."""
         if self._last_import_total is None:
             self._last_import_total = total
             return
         delta = total - self._last_import_total
         self._last_import_total = total
-        if delta > 0:
-            self.state.import_kwh_month += delta
+        if delta <= 0:
+            return
+        if period == "P2":
+            self.state.import_kwh_p2 += delta
+        elif period == "P3":
+            self.state.import_kwh_p3 += delta
+        else:  # P1 / unknown -> treat as punta
+            self.state.import_kwh_p1 += delta
 
     def run_settlement(self, today: dt.date) -> None:
         """Expire old buckets, and on billing day apply the estimated bill."""
@@ -178,7 +192,9 @@ class BVCoordinator:
         self.state.balance = new_balance
         # Reset monthly counters for the new period.
         self.state.surplus_value_month = 0.0
-        self.state.import_kwh_month = 0.0
+        self.state.import_kwh_p1 = 0.0
+        self.state.import_kwh_p2 = 0.0
+        self.state.import_kwh_p3 = 0.0
         self.state.period_start = today.isoformat()
 
     # --- helpers ---------------------------------------------------------
@@ -194,12 +210,37 @@ class BVCoordinator:
         else:
             self.state.buckets.append([today.year, today.month, value])
 
-    def _avg_price(self) -> float:
-        price_state = self.hass.states.get(self.config[CONF_PRICE])
-        if price_state is None:
-            return 0.0
-        price = _to_float(price_state.state)
-        return price if price is not None else 0.0
+    def _current_period(self) -> str:
+        """Active energy period from the period sensor's attribute.
+
+        Falls back to the last known period (P1 initially) when unavailable.
+        """
+        sensor = self.config.get(CONF_PERIOD_SENSOR)
+        if sensor:
+            state = self.hass.states.get(sensor)
+            if state is not None:
+                period = state.attributes.get(PERIOD_ATTRIBUTE)
+                if period in ENERGY_PERIODS:
+                    self._last_period = period
+                    return period
+        return self._last_period
+
+    def _energy_price(self, period: str) -> float:
+        """Configured €/kWh (taxes excluded) for an energy period."""
+        key = {
+            "P1": CONF_ENERGY_PRICE_P1,
+            "P2": CONF_ENERGY_PRICE_P2,
+            "P3": CONF_ENERGY_PRICE_P3,
+        }[period]
+        return float(self.config[key])
+
+    def current_energy_price_with_taxes(self) -> float:
+        """Current €/kWh including electricity tax and VAT (matches the template)."""
+        return calc.price_with_taxes(
+            self._energy_price(self._current_period()),
+            float(self.config[CONF_ELECTRICITY_TAX_PCT]),
+            float(self.config[CONF_VAT_PCT]),
+        )
 
     def _days_in_period(self, today: dt.date) -> int:
         if not self.state.period_start:
@@ -209,8 +250,12 @@ class BVCoordinator:
 
     def _estimate_bill(self, today: dt.date) -> calc.BillBreakdown:
         return calc.estimate_bill(
-            import_kwh=self.state.import_kwh_month,
-            avg_price=self._avg_price(),
+            import_kwh_p1=self.state.import_kwh_p1,
+            import_kwh_p2=self.state.import_kwh_p2,
+            import_kwh_p3=self.state.import_kwh_p3,
+            energy_price_p1=float(self.config[CONF_ENERGY_PRICE_P1]),
+            energy_price_p2=float(self.config[CONF_ENERGY_PRICE_P2]),
+            energy_price_p3=float(self.config[CONF_ENERGY_PRICE_P3]),
             contracted_power_p1_kw=float(self.config[CONF_CONTRACTED_POWER_P1_KW]),
             power_term_p1_eur_kw_day=float(self.config[CONF_POWER_TERM_P1_EUR_KW_DAY]),
             contracted_power_p2_kw=float(self.config[CONF_CONTRACTED_POWER_P2_KW]),

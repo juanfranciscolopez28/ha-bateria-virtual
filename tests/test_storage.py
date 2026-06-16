@@ -12,7 +12,9 @@ async def test_store_roundtrip(hass):
         last_export_total=100.0,
         period_start="2026-06-01",
         surplus_value_month=3.0,
-        import_kwh_month=50.0,
+        import_kwh_p1=50.0,
+        import_kwh_p2=20.0,
+        import_kwh_p3=10.0,
         buckets=[[2026, 6, 3.0]],
     )
     await store.async_save(state)
@@ -21,6 +23,9 @@ async def test_store_roundtrip(hass):
     assert loaded.balance == 12.5
     assert loaded.last_export_total == 100.0
     assert loaded.period_start == "2026-06-01"
+    assert loaded.import_kwh_p1 == 50.0
+    assert loaded.import_kwh_p2 == 20.0
+    assert loaded.import_kwh_p3 == 10.0
     assert loaded.buckets == [[2026, 6, 3.0]]
 
 

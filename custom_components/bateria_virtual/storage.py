@@ -17,7 +17,10 @@ class BVState:
     last_export_total: float | None = None
     period_start: str | None = None  # ISO date of current billing period start
     surplus_value_month: float = 0.0
-    import_kwh_month: float = 0.0
+    # Imported kWh this month, split by energy period (P1 punta / P2 llano / P3 valle).
+    import_kwh_p1: float = 0.0
+    import_kwh_p2: float = 0.0
+    import_kwh_p3: float = 0.0
     buckets: list = field(default_factory=list)  # list of [year, month, amount]
 
 

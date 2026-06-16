@@ -19,12 +19,15 @@ from .const import (
     CONF_CONTRACTED_POWER_P1_KW,
     CONF_CONTRACTED_POWER_P2_KW,
     CONF_ELECTRICITY_TAX_PCT,
+    CONF_ENERGY_PRICE_P1,
+    CONF_ENERGY_PRICE_P2,
+    CONF_ENERGY_PRICE_P3,
     CONF_GRID_EXPORT,
     CONF_GRID_IMPORT,
     CONF_INITIAL_BALANCE,
+    CONF_PERIOD_SENSOR,
     CONF_POWER_TERM_P1_EUR_KW_DAY,
     CONF_POWER_TERM_P2_EUR_KW_DAY,
-    CONF_PRICE,
     CONF_PRODUCTION,
     CONF_SURPLUS_PRICE,
     CONF_VAT_PCT,
@@ -33,6 +36,9 @@ from .const import (
     DEFAULT_CONTRACTED_POWER_P1_KW,
     DEFAULT_CONTRACTED_POWER_P2_KW,
     DEFAULT_ELECTRICITY_TAX_PCT,
+    DEFAULT_ENERGY_PRICE_P1,
+    DEFAULT_ENERGY_PRICE_P2,
+    DEFAULT_ENERGY_PRICE_P3,
     DEFAULT_POWER_TERM_P1_EUR_KW_DAY,
     DEFAULT_POWER_TERM_P2_EUR_KW_DAY,
     DEFAULT_SURPLUS_PRICE,
@@ -59,6 +65,15 @@ _PARAM_SCHEMA = {
     vol.Required(
         CONF_BALANCE_EXPIRY_MONTHS, default=DEFAULT_BALANCE_EXPIRY_MONTHS
     ): _number(0, 1),
+    vol.Required(
+        CONF_ENERGY_PRICE_P1, default=DEFAULT_ENERGY_PRICE_P1
+    ): _number(0, "any"),
+    vol.Required(
+        CONF_ENERGY_PRICE_P2, default=DEFAULT_ENERGY_PRICE_P2
+    ): _number(0, "any"),
+    vol.Required(
+        CONF_ENERGY_PRICE_P3, default=DEFAULT_ENERGY_PRICE_P3
+    ): _number(0, "any"),
     vol.Required(
         CONF_CONTRACTED_POWER_P1_KW, default=DEFAULT_CONTRACTED_POWER_P1_KW
     ): _number(0, 0.1),
@@ -96,7 +111,7 @@ class BVConfigFlow(ConfigFlow, domain=DOMAIN):
                 vol.Required(CONF_CONSUMPTION): _SENSOR_SELECTOR,
                 vol.Required(CONF_GRID_IMPORT): _SENSOR_SELECTOR,
                 vol.Required(CONF_GRID_EXPORT): _SENSOR_SELECTOR,
-                vol.Required(CONF_PRICE): _SENSOR_SELECTOR,
+                vol.Required(CONF_PERIOD_SENSOR): _SENSOR_SELECTOR,
                 **_PARAM_SCHEMA,
             }
         )
@@ -131,6 +146,18 @@ class BVOptionsFlow(OptionsFlow):
                         CONF_BALANCE_EXPIRY_MONTHS, DEFAULT_BALANCE_EXPIRY_MONTHS
                     ),
                 ): _number(0, 1),
+                vol.Required(
+                    CONF_ENERGY_PRICE_P1,
+                    default=current.get(CONF_ENERGY_PRICE_P1, DEFAULT_ENERGY_PRICE_P1),
+                ): _number(0, "any"),
+                vol.Required(
+                    CONF_ENERGY_PRICE_P2,
+                    default=current.get(CONF_ENERGY_PRICE_P2, DEFAULT_ENERGY_PRICE_P2),
+                ): _number(0, "any"),
+                vol.Required(
+                    CONF_ENERGY_PRICE_P3,
+                    default=current.get(CONF_ENERGY_PRICE_P3, DEFAULT_ENERGY_PRICE_P3),
+                ): _number(0, "any"),
                 vol.Required(
                     CONF_CONTRACTED_POWER_P1_KW,
                     default=current.get(

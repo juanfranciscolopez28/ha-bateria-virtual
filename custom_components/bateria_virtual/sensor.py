@@ -55,7 +55,40 @@ SENSORS: tuple[BVSensorDescription, ...] = (
         unit=UnitOfEnergy.KILO_WATT_HOUR,
         device_class=SensorDeviceClass.ENERGY,
         state_class=SensorStateClass.TOTAL,
-        value_fn=lambda c: round(c.state.import_kwh_month, 3),
+        value_fn=lambda c: round(
+            c.state.import_kwh_p1 + c.state.import_kwh_p2 + c.state.import_kwh_p3, 3
+        ),
+    ),
+    BVSensorDescription(
+        key="grid_import_month_p1",
+        name="Grid import this month (P1 punta)",
+        unit=UnitOfEnergy.KILO_WATT_HOUR,
+        device_class=SensorDeviceClass.ENERGY,
+        state_class=SensorStateClass.TOTAL,
+        value_fn=lambda c: round(c.state.import_kwh_p1, 3),
+    ),
+    BVSensorDescription(
+        key="grid_import_month_p2",
+        name="Grid import this month (P2 llano)",
+        unit=UnitOfEnergy.KILO_WATT_HOUR,
+        device_class=SensorDeviceClass.ENERGY,
+        state_class=SensorStateClass.TOTAL,
+        value_fn=lambda c: round(c.state.import_kwh_p2, 3),
+    ),
+    BVSensorDescription(
+        key="grid_import_month_p3",
+        name="Grid import this month (P3 valle)",
+        unit=UnitOfEnergy.KILO_WATT_HOUR,
+        device_class=SensorDeviceClass.ENERGY,
+        state_class=SensorStateClass.TOTAL,
+        value_fn=lambda c: round(c.state.import_kwh_p3, 3),
+    ),
+    BVSensorDescription(
+        key="current_energy_price",
+        name="Current energy price (taxes incl.)",
+        unit="EUR/kWh",
+        device_class=None,
+        value_fn=lambda c: round(c.current_energy_price_with_taxes(), 5),
     ),
     BVSensorDescription(
         key="estimated_bill",
